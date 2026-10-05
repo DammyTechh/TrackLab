@@ -1,0 +1,41 @@
+@import './fonts.css';
+@import './tokens.css';
+@import './theme.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 23px;
+    color: var(--ink-body);
+    background: var(--surface-page);
+    -webkit-font-smoothing: antialiased;
+  }
+  /* Yellow alone is not enough contrast for a ring; pair it with ink. */
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 1px;
+    box-shadow: 0 0 0 1px var(--ink-strong);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
+}
+
+@layer components {
+  .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+}
+
+/* Labels and reports print on A4 with real colours: the yellow frame on a
+   label is what tells a visitor where to point their camera. */
+@media print {
+  @page { size: A4; margin: 10mm; }
+  html, body { background: #ffffff !important; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

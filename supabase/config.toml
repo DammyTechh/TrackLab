@@ -1,0 +1,82 @@
+project_id = "evidencetag"
+
+# Ports moved off the 5432x defaults so this project can run alongside
+# another local Supabase project on the same machine.
+[api]
+enabled = true
+port = 55321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 55322
+shadow_port = 55320
+major_version = 15
+
+[db.pooler]
+enabled = false
+port = 55329
+
+[studio]
+enabled = true
+port = 55323
+
+[local_smtp]
+enabled = true
+port = 55324
+
+[analytics]
+enabled = true
+port = 55327
+
+[storage]
+enabled = true
+file_size_limit = "20MiB"
+
+# Buckets here are for local `supabase start` only. The hosted project gets
+# them, and their policies, from migrations/0007_storage.sql.
+# The CLI wants one table per bucket, keyed by the bucket name. The
+# [[storage.buckets]] array form is what made `supabase start` fail with
+# CliConfigParseError.
+[storage.buckets.equipment-photos]
+public = true
+file_size_limit = "5MiB"
+allowed_mime_types = ["image/jpeg", "image/png", "image/webp"]
+
+[storage.buckets.documents]
+public = false
+file_size_limit = "20MiB"
+allowed_mime_types = ["application/pdf", "image/jpeg", "image/png", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
+
+[storage.buckets.event-files]
+public = false
+file_size_limit = "10MiB"
+allowed_mime_types = ["image/jpeg", "image/png", "image/webp", "application/pdf"]
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+additional_redirect_urls = []
+jwt_expiry = 3600
+# There is no sign-up page, and there must be no way around that.
+enable_signup = false
+
+# Careful: despite the name, this switch turns the whole email provider on or
+# off. false here means "Email logins are disabled" and nobody can sign in.
+# Sign-ups are blocked by [auth] enable_signup = false above, which is enough.
+[auth.email]
+enable_signup = true
+enable_confirmations = false
+
+[functions.dispatch-outbox]
+# The function checks for the service key itself (_shared/caller.ts).
+# verify_jwt only proves a token is a signed JWT, which the public anon key
+# is, so it never protected this; it also rejects the new sb_secret_ keys.
+verify_jwt = false
+
+[functions.seed-users]
+# The function checks for the service key itself (_shared/caller.ts).
+# verify_jwt only proves a token is a signed JWT, which the public anon key
+# is, so it never protected this; it also rejects the new sb_secret_ keys.
+verify_jwt = false

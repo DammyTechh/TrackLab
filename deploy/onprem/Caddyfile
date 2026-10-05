@@ -1,0 +1,45 @@
+# One hostname for the app and the API, on the LAN and through the tunnel.
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	# Certificate by DNS challenge. Let's Encrypt never has to reach this
+	# server, so it works on a campus LAN, and the same certificate is valid
+	# whichever way a phone arrives.
+	tls {
+		dns cloudflare {$CLOUDFLARE_API_TOKEN}
+	}
+
+	encode zstd gzip
+
+	# Only the APIs the app uses. GraphQL, Studio and the MCP endpoint are
+	# deliberately not exposed.
+	@supabase path /auth/v1/* /rest/v1/* /realtime/v1/* /storage/v1/* /functions/v1/*
+	handle @supabase {
+		reverse_proxy api-gw:8000
+	}
+
+	handle {
+		root * /srv/app
+
+		# Hashed build output never changes under the same name. Everything
+		# else, including the service worker and every app route, must be
+		# revalidated, or phones keep running the previous release.
+		@hashed path /assets/*
+		header @hashed Cache-Control "public, max-age=31536000, immutable"
+		@other not path /assets/*
+		header @other Cache-Control "no-cache"
+
+		# A QR code opens /e/<token> directly; that is the app, not a file.
+		try_files {path} /index.html
+		file_server
+	}
+
+	header {
+		-Server
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "camera=(self), geolocation=(), microphone=()"
+	}
+}

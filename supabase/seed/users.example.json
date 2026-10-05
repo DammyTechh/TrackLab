@@ -1,0 +1,9 @@
+{
+  "defaultPassword": "set-a-strong-one-and-rotate",
+  "users": [
+    { "email": "dean@tracklab.edu.ng",      "full_name": "Prof. O. Adeyemi", "role": "senior_leader", "labs": [] },
+    { "email": "hod.chem@tracklab.edu.ng",  "full_name": "Dr. N. Eze",       "role": "lab_hod",       "labs": ["CHEM1", "CHEM2"] },
+    { "email": "a.bello@tracklab.edu.ng",   "full_name": "A. Bello",         "role": "technician",    "labs": ["CHEM1", "CHEM2"] },
+    { "email": "it.admin@tracklab.edu.ng",  "full_name": "IT Administrator", "role": "admin",         "labs": [] }
+  ]
+}

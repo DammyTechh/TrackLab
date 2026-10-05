@@ -1,0 +1,6 @@
+# Netlify and Cloudflare Pages.
+# Every printed QR code opens /e/<token> or /l/<token> directly from a phone
+# camera. Without this line the host answers those with its own 404 and every
+# label is dead. Real files (assets, sw.js, icons) are served first; only
+# paths that match no file fall through to the app.
+/*    /index.html    200

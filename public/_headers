@@ -1,0 +1,19 @@
+# Netlify and Cloudflare Pages.
+
+# The service worker and the HTML must never be cached by the browser or a
+# CDN, or a phone keeps running the old app after a release.
+/sw.js
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache
+/manifest.webmanifest
+  Cache-Control: no-cache
+
+# Hashed build output never changes under the same name.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(self), geolocation=(), microphone=()

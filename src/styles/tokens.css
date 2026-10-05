@@ -1,0 +1,90 @@
+/* tokens.css — generated from the design system. Do not hand-edit.
+ *
+ * The restrained palette: brand green, one amber, one rust, and neutrals.
+ * Colour carries URGENCY. The glyph and the word carry WHICH KIND.
+ * Seven statuses, three signals:
+ *   calm      operational (brand tint), under maintenance, retired
+ *   attention due soon
+ *   urgent    overdue, faulty, replacement recommended
+ */
+
+:root,
+[data-theme='light'] {
+  /* surfaces */
+  --surface-page:    #f3f5f1;
+  --surface-raised:  #ffffff;
+  --surface-sunken:  #e9ece6;
+  --surface-plate:   #11241a;
+
+  /* lines */
+  --line-subtle:     #e2e6dd;
+  --line-strong:     #b7c0b2;
+
+  /* ink */
+  --ink-strong:      #10211a;
+  --ink-body:        #2b3831;
+  --ink-muted:       #5a6459;
+  --ink-on-dark:     #ffffff;
+  --plate-muted:     #ccd8d0;   /* secondary text on surface-plate; 7.4:1 */
+
+  /* brand — the only two values an institution overrides */
+  --brand:           #0b4a28;
+  --brand-press:     #073519;
+  --brand-surface:   #e6efe8;
+  --accent:          #e8b93f;
+  --accent-ink:      #2b2000;
+
+  /* signals */
+  --signal-calm-ink:        #42504a;
+  --signal-calm-tint:       #e9ece6;
+  --signal-attention-ink:   #7d5406;
+  --signal-attention-tint:  #f6ecd2;
+  --signal-urgent-ink:      #8f2b16;
+  --signal-urgent-tint:     #f6e3dc;
+
+  --focus-ring:      var(--accent);
+  --overlay-scrim:   rgba(9, 20, 14, 0.56);
+
+  --shadow-raise:    0 1px 2px rgba(16, 33, 26, 0.08);
+  --shadow-sheet:    0 -8px 32px rgba(16, 33, 26, 0.16);
+  --shadow-sticker:  0 2px 0 rgba(16, 33, 26, 0.14);
+}
+
+[data-theme='dark'] {
+  --surface-page:    #0b1210;
+  --surface-raised:  #131b17;
+  --surface-sunken:  #080d0b;
+  --surface-plate:   #0a1310;
+  --line-subtle:     #25302a;
+  --line-strong:     #3b4942;
+  --ink-strong:      #f1f5ee;
+  --ink-body:        #ced7cc;
+  --ink-muted:       #97a399;
+  --ink-on-dark:     #ffffff;
+  --plate-muted:     #a9b8ae;
+  --brand:           #3f9f63;
+  --brand-press:     #338a53;
+  --brand-surface:   #10281a;
+  --signal-calm-ink:        #a9b4ab;
+  --signal-calm-tint:       #1d241f;
+  --signal-attention-ink:   #ddb662;
+  --signal-attention-tint:  #2b2208;
+  --signal-urgent-ink:      #e59c86;
+  --signal-urgent-tint:     #2f150e;
+  --shadow-raise:    0 1px 2px rgba(0, 0, 0, 0.6);
+  --shadow-sheet:    0 -8px 32px rgba(0, 0, 0, 0.7);
+  --shadow-sticker:  0 2px 0 rgba(0, 0, 0, 0.5);
+}
+
+:root {
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+  --space-12: 48px; --space-16: 64px;
+
+  --radius-xs: 4px;  --radius-sm: 6px;  --radius-md: 10px;
+  --radius-lg: 14px; --radius-xl: 20px; --radius-pill: 999px;
+
+  --font-sans: system-ui, 'Helvetica Neue', Helvetica, sans-serif; /* each theme.css sets its own */
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-icon: 'Material Symbols Rounded';
+}

@@ -1,0 +1,24 @@
+/*
+ * TrackLAB's design. Each institution's repository has its own copy of this
+ * file; everything else in src/ is shared.
+ *
+ * A theme owns the text typeface and may override any token in tokens.css
+ * (surfaces, ink, radii, shadows). Brand green and accent come from
+ * deploy/env (VITE_BRAND_PRIMARY / VITE_BRAND_ACCENT) so they also reach the
+ * installed app, the emails and the database; set the tints that go with
+ * them here.
+ *
+ * TrackLAB is the reference design, so it overrides nothing.
+ */
+
+/* Archivo, all three of its subsets. Yoruba names need all three: ṣ is in
+ * latin-ext, ẹ and ọ are in the vietnamese subset. (Archivo has no ǹ; that
+ * one letter falls back to the system typeface.) */
+@import '@fontsource/archivo/400.css';
+@import '@fontsource/archivo/500.css';
+@import '@fontsource/archivo/600.css';
+@import '@fontsource/archivo/700.css';
+
+:root {
+  --font-sans: Archivo, 'Helvetica Neue', Helvetica, sans-serif;
+}

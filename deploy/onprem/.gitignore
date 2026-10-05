@@ -1,0 +1,9 @@
+# Fetched by setup.sh at a pinned commit; never edited by hand.
+/supabase/
+# Real settings and secrets.
+/.env.onprem
+/backups/
+
+# The template is the one .env file that must be committed; the root
+# .gitignore excludes every .env.* by default.
+!/.env.onprem.example

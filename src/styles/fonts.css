@@ -1,0 +1,26 @@
+/*
+ * Every font is served from this app's own origin and precached by the
+ * service worker. Nothing is fetched from Google at runtime: on a campus LAN
+ * with no internet, a first-time visitor still gets the real typefaces and
+ * real icons rather than fallback fonts and raw ligature text.
+ */
+
+/* The text typeface belongs to each institution's theme (theme.css). */
+
+
+/* IBM Plex Mono only ever sets asset IDs, serials and codes: Latin is enough. */
+@import '@fontsource/ibm-plex-mono/latin-400.css';
+@import '@fontsource/ibm-plex-mono/latin-500.css';
+@import '@fontsource/ibm-plex-mono/latin-600.css';
+
+/* Material Symbols Rounded, cut to the icons this app uses (14 KB instead of
+ * 5.4 MB). Rebuild with scripts/icon-font/build.py after adding an icon;
+ * tests/iconFont.test.ts fails until you do. `block`, not `swap`: a swap
+ * would flash the icon's name as text while the font loads. */
+@font-face {
+  font-family: 'Material Symbols Rounded';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('../assets/fonts/material-symbols-rounded-subset.woff2') format('woff2');
+}

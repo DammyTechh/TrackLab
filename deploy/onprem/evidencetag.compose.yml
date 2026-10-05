@@ -1,0 +1,69 @@
+# EvidenceTag's layer over the official self-hosted Supabase stack.
+#
+# Never run this file on its own: use ./compose.sh, which combines it with
+# supabase/docker-compose.yml (fetched by setup.sh at a pinned commit) and
+# sets the project directory, so relative paths below resolve from
+# deploy/onprem/supabase/.
+#
+# Needs Docker Compose 2.24.4 or newer, for !reset and !override.
+
+services:
+  # Only Caddy faces the network. The raw gateway stays on the server for
+  # Studio, reached through an SSH tunnel (see README).
+  api-gw:
+    ports: !override
+      - "127.0.0.1:8000:8000"
+
+  # Postgres must not be reachable from the campus LAN. The scripts here run
+  # psql and pg_dump inside the db container instead.
+  supavisor:
+    ports: !reset []
+
+  functions:
+    environment:
+      # The stock functions service passes through a fixed list of variables;
+      # ours have to be added or dispatch-outbox cannot send anything.
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      APP_BASE_URL: https://${DOMAIN}
+
+  caddy:
+    build:
+      context: ..
+      dockerfile: Dockerfile.caddy
+    image: evidencetag-caddy:2.11
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    depends_on:
+      api-gw:
+        condition: service_healthy
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
+    volumes:
+      - ../Caddyfile:/etc/caddy/Caddyfile:ro
+      # The built app: run `npm run build` in the repository first.
+      - ../../../dist:/srv/app:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  # Internet access without opening a port. Started only with
+  # `./compose.sh --profile public up -d`.
+  cloudflared:
+    image: cloudflare/cloudflared:2026.9.3
+    restart: unless-stopped
+    profiles: ["public"]
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - caddy
+
+volumes:
+  caddy_data:
+  caddy_config:
