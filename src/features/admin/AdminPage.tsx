@@ -4,6 +4,7 @@ import { Container } from '@/ui/Container';
 import { Button } from '@/ui/Button';
 import { Icon } from '@/ui/Icon';
 import { useAuth } from '@/app/AuthProvider';
+import { PublicAddressSettings } from './PublicAddressSettings';
 
 interface LabRow {
   id: string;
@@ -90,6 +91,8 @@ export function AdminPage() {
     <Container width="app" className="py-6 sm:py-8">
       <h1 className="m-0 text-[28px] font-bold leading-8 tracking-[-0.015em] text-ink-strong">Admin</h1>
       <p className="mb-0 mt-2 text-[15px] text-ink-muted">Labs and accounts. Equipment records are kept by each lab.</p>
+
+      <PublicAddressSettings />
 
       <h2 className="mb-3 mt-8 text-[19px] font-semibold text-ink-strong">Labs</h2>
       <ul className="m-0 flex list-none flex-col gap-3 p-0 md:hidden">

@@ -9,6 +9,8 @@ interface ImportMetaEnv {
   readonly VITE_BRAND_PRIMARY: string;
   readonly VITE_BRAND_ACCENT: string;
   readonly VITE_BRAND_LOGO_URL: string;
+  /** Optional. Sign-in illustration base path; empty for none. */
+  readonly VITE_SIGNIN_IMAGE?: string;
   readonly VITE_TIMEZONE: string;
   readonly VITE_SUPABASE_URL: string;
   readonly VITE_SUPABASE_ANON_KEY: string;

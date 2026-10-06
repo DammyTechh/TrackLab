@@ -76,7 +76,11 @@ function tableRows(table: string, filters: Record<string, string>): Record<strin
   return (all[table] ?? []).filter((row) => Object.entries(filters).every(([k, v]) => String(row[k]) === v));
 }
 
-export async function mockSupabase(context: BrowserContext): Promise<MockHandle> {
+/** publicBaseUrl: the address the admin saved (institution.public_base_url), or null for none. */
+export async function mockSupabase(
+  context: BrowserContext,
+  { publicBaseUrl = null }: { publicBaseUrl?: string | null } = {},
+): Promise<MockHandle> {
   const handle: MockHandle = { writes: [], signed: [] };
 
   // The network probe's "is the wider internet up?" check.
@@ -137,7 +141,8 @@ export async function mockSupabase(context: BrowserContext): Promise<MockHandle>
       return route.fulfill({ status: 200, headers: { 'content-range': '*/0' }, body: '' });
     }
     if (method === 'GET') {
-      const rows = tableRows(target, eqFilters(url));
+      const rows =
+      target === 'institution' ? [{ code: 'TEST', public_base_url: publicBaseUrl }] : tableRows(target, eqFilters(url));
       const wantsObject = (request.headers()['accept'] ?? '').includes('vnd.pgrst.object');
       if (wantsObject) return rows[0] ? json(route, rows[0]) : json(route, { code: 'PGRST116' }, 406);
       return json(route, rows, 200, { 'content-range': `0-${Math.max(rows.length - 1, 0)}/${rows.length}` });

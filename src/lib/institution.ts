@@ -14,6 +14,11 @@ export interface Institution {
   brandPrimary: string;
   brandAccent: string;
   timezone: string;
+  /**
+   * Base path of the sign-in illustration; the page loads `<base>-640.webp` on
+   * phones and `<base>-1100.webp` on larger screens. null: no illustration.
+   */
+  signinImage: string | null;
 }
 
 function required(key: string): string {
@@ -30,6 +35,11 @@ export const institution: Institution = {
   brandPrimary: required('VITE_BRAND_PRIMARY'),
   brandAccent: required('VITE_BRAND_ACCENT'),
   timezone: (import.meta.env.VITE_TIMEZONE as string) || 'Africa/Lagos',
+  // Not set at all: the default artwork in public/brand/. Set but empty: none.
+  signinImage:
+    import.meta.env.VITE_SIGNIN_IMAGE === undefined
+      ? '/brand/signin'
+      : (import.meta.env.VITE_SIGNIN_IMAGE as string).trim() || null,
 };
 
 /** Call once, before the first paint. */

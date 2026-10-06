@@ -1,7 +1,8 @@
 export { StaffHomePage } from './StaffHomePage';
 export { RegisterEquipmentPage } from './RegisterEquipmentPage';
 export { LabelsPage } from './LabelsPage';
-export { generateQrToken, passportUrl, labBoardUrl, publicBaseUrl, renderQrSvg } from './qr';
+export { generateQrToken, passportUrl, labBoardUrl, normalisePublicAddress, resolvePublicAddress, renderQrSvg } from './qr';
+export { usePublicAddress } from './usePublicAddress';
 export { EquipmentPhoto } from './EquipmentPhoto';
 export { EquipmentDocuments } from './EquipmentDocuments';
 export { openDocument } from './documents';

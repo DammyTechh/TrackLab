@@ -23,7 +23,7 @@ dev dependency, so `npx supabase` works without a global install).
 npm ci
 cp deploy/env/.env.tracklab.example deploy/env/.env.tracklab   # then fill it in
 npx supabase start                                     # prints the URL and keys
-npx supabase db reset                                  # migrations 0001–0010
+npx supabase db reset                                  # every migration in supabase/migrations
 npm run dev                                            # http://localhost:5173
 ```
 

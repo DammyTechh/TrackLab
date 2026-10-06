@@ -17,6 +17,8 @@ import { enqueueEvent } from '@/offline/outbox';
 import { format } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { generateQrToken, passportUrl, renderQrSvg } from './qr';
+import { usePublicAddress } from './usePublicAddress';
+import { AddressNotice } from './AddressNotice';
 import { queueEquipmentPhoto } from './photo';
 import { planInitialHistory } from './initialHistory';
 
@@ -44,6 +46,7 @@ interface Registered {
  * offline. The optional photo still goes through the offline outbox.
  */
 export function RegisterEquipmentPage() {
+  const address = usePublicAddress();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { profile } = useAuth();
@@ -95,8 +98,9 @@ export function RegisterEquipmentPage() {
   }, [photo]);
 
   useEffect(() => {
-    if (done) void renderQrSvg(passportUrl(done.qr_token)).then(setQrSvg);
-  }, [done]);
+    // Drawn once the saved address is known, so the code never shows a stand-in.
+    if (done && !address.loading) void renderQrSvg(passportUrl(address.url, done.qr_token)).then(setQrSvg);
+  }, [done, address.loading, address.url]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -234,9 +238,18 @@ export function RegisterEquipmentPage() {
           <p className="mb-0 mt-1 text-[13px] text-ink-muted">{done.labName} · Scan for status and history</p>
           <p className="mono mb-0 mt-2 text-[13px] text-ink-muted">Code {done.qr_token}</p>
         </div>
+        <div className="print:hidden">
+          <AddressNotice address={address} />
+        </div>
 
         <div className="mt-6 flex flex-col gap-3 print:hidden sm:flex-row">
-          <Button intent="scan" icon="print" block onClick={() => window.print()}>
+          <Button
+            intent="scan"
+            icon="print"
+            block
+            disabled={address.loading || address.isPrivate}
+            onClick={() => window.print()}
+          >
             Print label
           </Button>
           <Button intent="secondary" icon="badge" block onClick={() => navigate(`/e/${done.qr_token}`)}>

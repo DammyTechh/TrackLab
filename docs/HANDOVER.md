@@ -257,19 +257,24 @@ Do these in order. Tick each one.
    ```
    VITE_SUPABASE_URL=https://<project-ref>.supabase.co
    VITE_SUPABASE_ANON_KEY=<publishable key>
-   VITE_PUBLIC_BASE_URL=https://tracklab.<school-domain>   # printed into every QR
    ```
-   **Set `VITE_PUBLIC_BASE_URL` before printing a single label.** The Labels page shows a red
-   warning while codes would point at localhost or a LAN address.
+   On Vercel, put the same values in **Project → Settings → Environment Variables**, then
+   **redeploy**: the settings file is never uploaded, and the app reads these only when it is
+   built.
 9. **Build and host.** `npm run build:tracklab` → upload `dist/` to any static host on the
    institution domain. The SPA fallback and cache headers are **already in the repo**:
    `public/_redirects` and `public/_headers` (Netlify, Cloudflare Pages) and `vercel.json`.
    Without the fallback, opening `/e/<token>` from a phone camera returns the host's 404 —
    check it on the live site by opening a passport URL directly. For any other host, make
    every path that is not a file serve `index.html`, and serve `sw.js` with `no-cache`.
-10. **Smoke test** on a phone over mobile data: sign in as each role, register a machine,
+10. **Set the public address, before printing a single label.** Sign in as the admin →
+   **Admin → Public address** → enter the address everyone will use (the custom domain if
+   you have one) → **Save address**. It is stored in the database, so every phone and computer
+   prints labels that open it, including a laptop running the app locally. Printing is
+   blocked while the only address available would work on one computer.
+11. **Smoke test** on a phone over mobile data: sign in as each role, register a machine,
     take a photo, record a fault, scan the printed label signed out.
-11. **Print** lab entrance cards and equipment labels; mark them printed.
+12. **Print** lab entrance cards and equipment labels; mark them printed.
 
 
 ---
@@ -295,7 +300,9 @@ Studio: http://127.0.0.1:55323. Local email inbox (Mailpit): http://127.0.0.1:55
 | `email_provider_disabled` on sign in | `[auth.email] enable_signup = false` turns off email login entirely | `[auth.email] enable_signup = true`; sign-ups stay blocked by `[auth] enable_signup = false` |
 | GitHub push blocked: "Supabase Secret Key" | `supabase/.temp/` was committed | `.gitignore` covers `supabase/.temp/`; history rebuilt without it |
 | Camera button opens a file picker on a phone | page served over plain http on a LAN IP | expected; the live camera needs https or localhost. Upload works everywhere |
-| Labels warn "Do not print these for real yet" | `VITE_PUBLIC_BASE_URL` unset | set it to the live address |
+| Labels say they "can't be printed yet" | no public address saved, and the page is open on a local address | Admin → Public address |
+| A scanned label opens the wrong site | it was printed before the address was set | reprint it from the Labels page; the QR token stays the same |
+| Moving to a custom domain | | add the domain in Vercel, then Admin → Public address. Keep the old address working so labels already printed still scan |
 
 Testing on a phone during development: `npm run dev -- --host`, open the `Network:`
 address on the same Wi-Fi. For the live camera on a phone, use an https tunnel (for
@@ -318,7 +325,7 @@ Frontend (`deploy/env/.env.<mode>`, read at build time, all public):
 | `VITE_BRAND_LOGO_URL` | no | Logo image; wordmark renders when empty |
 | `VITE_TIMEZONE` | no | Defaults to `Africa/Lagos` |
 | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | yes | Project URL and publishable/anon key |
-| `VITE_PUBLIC_BASE_URL` | yes before printing | Permanent address printed into QR codes |
+| `VITE_PUBLIC_BASE_URL` | no | Fallback only. The QR address is set in Admin → Public address |
 | `VITE_HEALTH_URL` | no | Only for an on-premise health endpoint |
 | `VITE_VAPID_PUBLIC_KEY` | no | Enables push opt-in. Public half only; the private key is a function secret |
 
@@ -417,7 +424,7 @@ npm run build
 
 `test:e2e` builds into `dist-e2e/` and answers Supabase from `e2e/supabaseMock.ts`, so it
 needs no backend. Where Playwright cannot download a browser, set
-`PLAYWRIGHT_CHROMIUM_EXECUTABLE` to any Chromium. Then the smoke test in §7 step 10.
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE` to any Chromium. Then the smoke test in §7 step 11.
 
 Conventions enforced by lint: no hex colours in `.tsx` (use tokens), no emoji, no
 assignment to `.status`, accessibility rules (jsx-a11y). Layout rules: every screen uses

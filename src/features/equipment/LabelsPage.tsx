@@ -8,7 +8,9 @@ import { Button } from '@/ui/Button';
 import { Icon } from '@/ui/Icon';
 import { Container } from '@/ui/Container';
 import { useAuth } from '@/app/AuthProvider';
-import { labBoardUrl, labelsWouldPointAtLocalhost, passportUrl, publicBaseUrl, renderQrSvg } from './qr';
+import { labBoardUrl, passportUrl, renderQrSvg } from './qr';
+import { usePublicAddress } from './usePublicAddress';
+import { AddressNotice } from './AddressNotice';
 
 interface LabelMachine {
   id: string;
@@ -41,6 +43,7 @@ type Layout = 'sheet' | 'single';
  * label printer.
  */
 export function LabelsPage() {
+  const address = usePublicAddress();
   const queryClient = useQueryClient();
   const { profile } = useAuth();
   const [tab, setTab] = useState<'equipment' | 'labs'>('equipment');
@@ -117,17 +120,7 @@ export function LabelsPage() {
           get a PDF, choose Save as PDF in the print dialog.
         </p>
 
-        {labelsWouldPointAtLocalhost() ? (
-          <p className="mb-0 mt-4 flex items-start gap-3 rounded-lg bg-urgent-tint p-4 text-[14px] leading-5 text-urgent-ink">
-            <Icon name="error" filled className="shrink-0" />
-            <span>
-              <strong>Do not print these for real yet.</strong> The codes would point at{' '}
-              <span className="mono break-all">{publicBaseUrl()}</span>, which only works on this computer. Set{' '}
-              <span className="mono">VITE_PUBLIC_BASE_URL</span> to the live address (for example{' '}
-              <span className="mono break-all">https://evidencetag.yourschool.edu.ng</span>) and restart. Test prints are fine.
-            </span>
-          </p>
-        ) : null}
+        <AddressNotice address={address} />
 
         <div className="mt-6 flex flex-wrap gap-2" role="tablist">
           {(
@@ -236,7 +229,7 @@ export function LabelsPage() {
         )}
 
         <div className="mt-6 flex flex-wrap gap-3">
-          <Button intent="scan" icon="print" disabled={printCount === 0} onClick={() => window.print()}>
+          <Button intent="scan" icon="print" disabled={printCount === 0 || address.loading || address.isPrivate} onClick={() => window.print()}>
             Print {printCount} {tab === 'equipment' ? (printCount === 1 ? 'label' : 'labels') : printCount === 1 ? 'card' : 'cards'}
           </Button>
           {tab === 'equipment' ? (
@@ -264,13 +257,13 @@ export function LabelsPage() {
         {tab === 'equipment' ? (
           <div className={layout === 'sheet' ? 'grid grid-cols-1 gap-[4mm] sm:grid-cols-2 print:grid-cols-2' : 'flex flex-col'}>
             {toPrint.map((m) => (
-              <EquipmentLabel key={m.id} machine={m} single={layout === 'single'} />
+              <EquipmentLabel key={m.id} machine={m} single={layout === 'single'} base={address.url} />
             ))}
           </div>
         ) : (
           <div className="flex flex-col gap-6 print:gap-0">
             {labsToPrint.map((lab) => (
-              <LabEntranceCard key={lab.id} lab={lab} />
+              <LabEntranceCard key={lab.id} lab={lab} base={address.url} />
             ))}
           </div>
         )}
@@ -292,7 +285,7 @@ function QrSvg({ url, className }: { url: string; className?: string }) {
   return <div className={className} dangerouslySetInnerHTML={{ __html: svg }} />;
 }
 
-function EquipmentLabel({ machine, single }: { machine: LabelMachine; single: boolean }) {
+function EquipmentLabel({ machine, single, base }: { machine: LabelMachine; single: boolean; base: string }) {
   return (
     <div
       className={[
@@ -300,7 +293,7 @@ function EquipmentLabel({ machine, single }: { machine: LabelMachine; single: bo
         single ? 'mx-auto mb-6 h-[70mm] w-full max-w-[100mm] print:mb-0 print:w-[100mm] print:[break-after:page]' : 'h-[64mm]',
       ].join(' ')}
     >
-      <QrSvg url={passportUrl(machine.qr_token)} className="h-[44mm] w-[44mm] shrink-0 [&>svg]:h-full [&>svg]:w-full" />
+      <QrSvg url={passportUrl(base, machine.qr_token)} className="h-[44mm] w-[44mm] shrink-0 [&>svg]:h-full [&>svg]:w-full" />
       <div className="flex min-w-0 flex-1 flex-col gap-[2mm]">
         <Brandmark height={22} />
         <p className="mono m-0 text-[14px] font-semibold leading-tight text-ink-strong">{machine.asset_id}</p>
@@ -312,7 +305,7 @@ function EquipmentLabel({ machine, single }: { machine: LabelMachine; single: bo
   );
 }
 
-function LabEntranceCard({ lab }: { lab: LabCard }) {
+function LabEntranceCard({ lab, base }: { lab: LabCard; base: string }) {
   return (
     <div className="mx-auto flex w-full max-w-[190mm] flex-col items-center rounded-xl border-[3mm] border-accent bg-surface-raised p-[6mm] text-center sm:p-[10mm] [break-inside:avoid] print:h-[270mm] print:justify-center print:[break-after:page]">
       <Brandmark height={40} />
@@ -320,7 +313,7 @@ function LabEntranceCard({ lab }: { lab: LabCard }) {
       <p className="mb-0 mt-[2mm] text-[16px] text-ink-muted">
         {[lab.building, lab.room].filter(Boolean).join(' · ')}
       </p>
-      <QrSvg url={labBoardUrl(lab.public_token)} className="mt-[8mm] aspect-square w-full max-w-[110mm] [&>svg]:h-full [&>svg]:w-full" />
+      <QrSvg url={labBoardUrl(base, lab.public_token)} className="mt-[8mm] aspect-square w-full max-w-[110mm] [&>svg]:h-full [&>svg]:w-full" />
       <p className="mb-0 mt-[6mm] text-[16px] font-semibold text-ink-strong sm:text-[20px]">
         Scan to see every machine in this lab and whether it is safe to use
       </p>

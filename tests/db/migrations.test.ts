@@ -515,3 +515,39 @@ describe('weekly digest (0010)', () => {
     expect(hods?.counts.overdue).toBe(1);
   });
 });
+
+describe('the public address for QR labels (0012)', () => {
+  let admin: string;
+  beforeAll(async () => {
+    admin = await userId(db, 'it.admin@test.local');
+  });
+  const setAs = (who: string, value: string | null) =>
+    as(db, 'authenticated', who, () =>
+      db.query('update institution set public_base_url = $1 returning public_base_url', [value]),
+    );
+
+  it('lets the admin set it, and every device then reads the same value', async () => {
+    const result = await setAs(admin, 'https://equipment.example.edu.ng');
+    expect(result.rows).toEqual([{ public_base_url: 'https://equipment.example.edu.ng' }]);
+    const [row] = await asTech(() => rows(db, 'select public_base_url from institution'));
+    expect(row).toEqual({ public_base_url: 'https://equipment.example.edu.ng' });
+  });
+
+  it.each([
+    ['localhost', 'https://localhost'],
+    ['a laptop on the LAN', 'https://192.168.1.20'],
+    ['plain http', 'http://equipment.example.edu.ng'],
+    ['a path', 'https://equipment.example.edu.ng/app'],
+    ['a trailing slash', 'https://equipment.example.edu.ng/'],
+    ['no domain', 'https://equipment'],
+  ])('refuses %s, which would print labels that do not work everywhere', async (_label, value) => {
+    await expect(setAs(admin, value)).rejects.toThrow(/public_base_url_shape/);
+  });
+
+  it('refuses a technician, and refuses the admin anything but the address', async () => {
+    expect((await setAs(tech, 'https://example.edu.ng')).rows).toHaveLength(0);
+    await expect(
+      as(db, 'authenticated', admin, () => db.query(`update institution set product_name = 'Renamed'`)),
+    ).rejects.toThrow(/permission denied/);
+  });
+});
