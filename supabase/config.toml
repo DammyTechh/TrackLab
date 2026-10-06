@@ -56,7 +56,7 @@ allowed_mime_types = ["image/jpeg", "image/png", "image/webp", "application/pdf"
 
 [auth]
 enabled = true
-site_url = "http://localhost:5173"
+site_url = "https://track-lab-mu.vercel.app"
 additional_redirect_urls = []
 jwt_expiry = 3600
 # There is no sign-up page, and there must be no way around that.
