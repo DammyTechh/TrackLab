@@ -1,0 +1,15 @@
+# What `vercel` (the command-line tool) must never upload. Unlike Git, it does
+# not read .gitignore. Without this file it uploaded a laptop's own settings,
+# pointing the live site at that laptop's local database.
+deploy/env/.env.*
+!deploy/env/.env.*.example
+.env
+.env.*
+supabase/.temp
+supabase/.branches
+node_modules
+dist
+dist-e2e
+test-results
+playwright-report
+exports

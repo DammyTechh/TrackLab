@@ -21,12 +21,31 @@ export interface SyncResult {
   pulled: number;
 }
 
+/** Storage's answer when a file with this name is already there, in any of its forms. */
+export function isAlreadyUploaded(error: unknown): boolean {
+  const e = (error && typeof error === 'object' ? error : {}) as {
+    statusCode?: unknown;
+    status?: unknown;
+    error?: unknown;
+    message?: unknown;
+  };
+  return (
+    String(e.statusCode) === '409' ||
+    e.status === 409 ||
+    e.error === 'Duplicate' ||
+    (typeof e.message === 'string' && /already exists|duplicate/i.test(e.message))
+  );
+}
+
 /** 15 s after the first failure, doubling, never more than 10 minutes. */
 export function retryDelayMs(attempts: number): number {
   return attempts <= 0 ? 0 : Math.min(15_000 * 2 ** (attempts - 1), 10 * 60_000);
 }
 
-export function isDueForRetry(item: { attempts: number; last_attempt_at?: number }, now = Date.now()): boolean {
+export function isDueForRetry(
+  item: { attempts: number; last_attempt_at?: number },
+  now = Date.now(),
+): boolean {
   return !item.last_attempt_at || now - item.last_attempt_at >= retryDelayMs(item.attempts);
 }
 
@@ -50,10 +69,14 @@ async function runSync(): Promise<SyncResult> {
       // Files go up first; a row that references a missing object is worse
       // than a file with no row, which the next sweep cleans up.
       for (const file of item.files ?? []) {
+        // A plain upload, never an overwrite: every file has its own random
+        // name, so nothing needs overwriting, and the overwrite path is what
+        // failed with "database error 42P10" on a local Supabase. "Already
+        // exists" therefore means an earlier attempt got through: success.
         const { error } = await supabase.storage
           .from(file.bucket)
-          .upload(file.path, file.blob, { upsert: true, contentType: file.blob.type });
-        if (error && !error.message.includes('already exists')) throw error;
+          .upload(file.path, file.blob, { upsert: false, contentType: file.blob.type });
+        if (error && !isAlreadyUploaded(error)) throw error;
       }
 
       switch (item.kind) {

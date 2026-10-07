@@ -6,6 +6,8 @@
  * screen that checked it fell back to a vague "Not saved", hiding the reason.
  */
 
+import { serverAddressProblem } from './serverAddress';
+
 interface Described {
   code?: unknown;
   message?: unknown;
@@ -41,7 +43,11 @@ export function describeError(err: unknown, fallback: string): string {
   if (code === '23505') return 'That already exists.';
   if (code === '23514') return 'The database refused that value as invalid.';
   if (/failed to fetch|networkerror|load failed/i.test(message)) {
-    return 'Could not reach the server. Check the connection and try again.';
+    const setup = serverAddressProblem(
+      import.meta.env?.VITE_SUPABASE_URL as string | undefined,
+      typeof window !== 'undefined' ? window.location.hostname : undefined,
+    );
+    return setup ?? 'Could not reach the server. Check the connection and try again.';
   }
   return message && message !== '[object Object]' && message !== 'undefined' ? message : fallback;
 }

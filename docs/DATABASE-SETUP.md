@@ -118,6 +118,27 @@ turn off email confirmation.
 - SQL Editor: `select status, count(*) from email_outbox group by status;`
   shows `sent` once an alert has gone out (the job runs every five minutes).
 
+## 8. The website on Vercel
+
+The website reads its settings when it is **built**, not while it runs, and
+Vercel never sees your laptop's `deploy/env/.env.tracklab`. In Vercel →
+your project → **Settings → Environment Variables**, set (Production):
+
+| Name | Value |
+| --- | --- |
+| `VITE_SUPABASE_URL` | `https://<project-ref>.supabase.co` — the **live** project, never `127.0.0.1` or `localhost` |
+| `VITE_SUPABASE_ANON_KEY` | the live project's publishable key (Project Settings → API Keys) |
+| `VITE_INSTITUTION_CODE`, `VITE_INSTITUTION_NAME`, `VITE_PRODUCT_NAME`, `VITE_BRAND_PRIMARY`, `VITE_BRAND_ACCENT`, `VITE_BRAND_LOGO_URL` | as in `deploy/env/.env.tracklab.example` |
+
+Then **Deployments → ⋯ → Redeploy**, with *Use existing build cache* turned
+**off**. A change to these settings does nothing until the next build.
+
+A build pointed at `127.0.0.1` or `localhost` now stops with an explanation,
+because such a site works only on the computer running that local database:
+everyone else, even on the same Wi-Fi, gets "could not reach the server".
+Deploying with the `vercel` command from a laptop no longer uploads the
+laptop's own settings files (`.vercelignore`).
+
 ## If people cannot sign in
 
 The sign-in page now says why. In the SQL Editor, this lists every account

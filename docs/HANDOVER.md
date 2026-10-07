@@ -291,6 +291,7 @@ Studio: http://127.0.0.1:55323. Local email inbox (Mailpit): http://127.0.0.1:55
 | `email_provider_disabled` on sign in | `[auth.email] enable_signup = false` turns off email login entirely | `[auth.email] enable_signup = true`; sign-ups stay blocked by `[auth] enable_signup = false` |
 | GitHub push blocked: "Supabase Secret Key" | `supabase/.temp/` was committed | `.gitignore` covers `supabase/.temp/`; history rebuilt without it |
 | Camera button opens a file picker on a phone | page served over plain http on a LAN IP | expected; the live camera needs https or localhost. Upload works everywhere |
+| Works on one laptop; nobody else can sign in, and scans say "could not reach the server" | the site was built with `VITE_SUPABASE_URL` pointing at that laptop's local database (`127.0.0.1`) | set the live address in Vercel → Environment Variables and redeploy without cache. Such builds now refuse to complete (DATABASE-SETUP §8) |
 | A save fails with "the app's connection to it has not caught up" (or `PGRST204 … schema cache` in the browser) | SQL was run by hand and the API has not reloaded | SQL editor: `notify pgrst, 'reload schema';` |
 | A photo or document says the upload failed | the reason is shown beside it; the phone retries on its own every half minute or so, backing off to every ten minutes | fix the reason shown; it then goes through by itself |
 | Labels say they "can't be printed yet" | no public address saved, and the page is open on a local address | Admin → Public address |

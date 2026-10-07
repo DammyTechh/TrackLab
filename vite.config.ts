@@ -1,4 +1,5 @@
 import { defineConfig, loadEnv } from 'vite';
+import { isLoopbackUrl } from './src/lib/serverAddress';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'node:path';
@@ -24,7 +25,7 @@ const REQUIRED = [
   'VITE_SUPABASE_ANON_KEY',
 ] as const;
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, envDir, 'VITE_');
 
   // Fail at build time, not at first paint. A deployment that ships without
@@ -35,6 +36,22 @@ export default defineConfig(({ mode }) => {
     throw new Error(
       `Missing ${missing.join(', ')} for mode "${mode}".\n` +
         `Copy deploy/env/.env.${mode}.example to deploy/env/.env.${mode} and fill it in.`,
+    );
+  }
+
+  // A build is what gets deployed. Pointed at a database that exists only on
+  // this computer (the local Supabase, http://127.0.0.1:55321), it works here
+  // and nowhere else: other computers, even on the same Wi-Fi, and phones get
+  // "could not reach the server". That happened to the live site, so a build
+  // like that now stops here. `npm run dev` is not affected. For a deliberate
+  // local test build, set ALLOW_LOCAL_SUPABASE=1.
+  if (command === 'build' && isLoopbackUrl(env.VITE_SUPABASE_URL) && process.env.ALLOW_LOCAL_SUPABASE !== '1') {
+    throw new Error(
+      `VITE_SUPABASE_URL is ${env.VITE_SUPABASE_URL}, a database on this computer only.\n` +
+        'A site built like this cannot be used from any other phone or computer.\n' +
+        'Set VITE_SUPABASE_URL to the live address, https://<project-ref>.supabase.co, in the hosting\n' +
+        "settings (Vercel: Settings -> Environment Variables) or in deploy/env/.env." + mode + ', and build again.\n' +
+        '(For a local test build only: ALLOW_LOCAL_SUPABASE=1 npm run build.)',
     );
   }
 
