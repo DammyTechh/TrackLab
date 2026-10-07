@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { UnknownCode } from '@/features/public-passport';
+import { UnknownCode, CannotReach } from '@/features/public-passport';
+import { supabasePublic } from '@/lib/supabasePublic';
 import { useQuery } from '@tanstack/react-query';
-import { supabase, equipmentPhotoUrl } from '@/lib/supabase';
+import { equipmentPhotoUrl } from '@/lib/supabase';
 import { EquipmentRow } from '@/ui/EquipmentRow';
 import { Icon } from '@/ui/Icon';
 import { Container } from '@/ui/Container';
@@ -27,10 +28,10 @@ export function LabBoardPage() {
   const [filter, setFilter] = useState<EquipmentStatus | 'all'>('all');
   const [search, setSearch] = useState('');
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['lab', labToken],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_public_lab', { p_public_token: labToken });
+      const { data, error } = await supabasePublic.rpc('get_public_lab', { p_public_token: labToken });
       if (error) throw error;
       return data as { name: string; equipment: LabEquipment[] };
     },
@@ -55,16 +56,7 @@ export function LabBoardPage() {
       </Container>
     );
 
-  if (isError)
-    return (
-      <Container className="py-16 text-center">
-        <Icon name="wifi_off" size={40} className="text-ink-muted" />
-        <h1 className="mt-4 text-[19px] font-semibold text-ink-strong">This lab board can&rsquo;t load right now</h1>
-        <p className="mt-2 text-[13px] text-ink-muted">
-          The server can&rsquo;t be reached. Try again once you are on the campus network.
-        </p>
-      </Container>
-    );
+  if (isError) return <CannotReach what="This lab board" error={error} onRetry={() => void refetch()} />;
 
   if (!data) return <UnknownCode kind="lab" />;
 

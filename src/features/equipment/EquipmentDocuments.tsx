@@ -15,6 +15,7 @@ import {
   type DocumentKind,
   type EquipmentDocument,
 } from './documents';
+import { describeError } from '@/lib/errors';
 
 const KIND_LABEL: Record<DocumentKind, string> = { sop: 'SOP', manual: 'Manual', certificate: 'Certificate' };
 
@@ -89,7 +90,7 @@ function DocumentRow({
     try {
       await openDocument(doc.file_path);
     } catch (err) {
-      setOpenError(err instanceof Error ? err.message : 'That document could not be opened.');
+      setOpenError(describeError(err, 'That document could not be opened.'));
     }
   }
 
@@ -106,7 +107,7 @@ function DocumentRow({
               <span className={`flex items-center gap-1 ${doc.lastError ? 'text-attention-ink' : ''}`}>
                 <Icon name={doc.lastError ? 'sync_problem' : 'schedule'} size={18} />
                 {doc.lastError
-                  ? 'Not uploaded yet; retrying'
+                  ? `Not uploaded yet (${doc.lastError}); retrying`
                   : state === 'offline'
                     ? 'Saved on this phone'
                     : 'Uploading…'}
@@ -148,7 +149,7 @@ function DocumentRow({
             {withdraw.isError ? (
               <p role="alert" className="mb-0 mt-2 text-[13px] text-urgent-ink">
                 {state === 'offline'
-                  ? 'Withdrawing needs a connection. Try again on the campus network.'
+                  ? 'Withdrawing needs a connection. Try again once this device is connected.'
                   : withdraw.error instanceof Error
                     ? withdraw.error.message
                     : 'That did not work.'}
@@ -201,7 +202,7 @@ function AddDocumentForm({ equipmentId, onDone }: { equipmentId: string; onDone:
       { file, title, kind },
       {
         onSuccess: onDone,
-        onError: (err) => setError(err instanceof Error ? err.message : 'That document could not be saved.'),
+        onError: (err) => setError(describeError(err, 'That document could not be saved.')),
       },
     );
   }

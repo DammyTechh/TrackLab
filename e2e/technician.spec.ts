@@ -73,3 +73,19 @@ test('an event recorded with no network is kept on the phone and sent when it re
   // The device-only flag never reaches the database.
   expect(sent!.body).not.toHaveProperty('synced');
 });
+
+test('an upload the server refused is retried while online, with no network change', async ({ page, context }) => {
+  test.setTimeout(90_000);
+  mock = await mockSupabase(context, { failWrites: 1 });
+  await signIn(page);
+  await page.getByRole('button', { name: 'Record an event' }).click();
+  await page.getByRole('button', { name: 'Log use' }).click();
+  await page.getByLabel('Purpose').fill('Retry check');
+  await page.getByRole('button', { name: 'Save use log' }).click();
+
+  // The first attempt is refused and the phone stays online throughout. The
+  // old code only retried on an offline -> online change, so this sat forever.
+  await expect
+    .poll(() => mock.writes.filter((w) => w.table.startsWith('events')).length, { timeout: 70_000, intervals: [2_000] })
+    .toBe(1);
+});

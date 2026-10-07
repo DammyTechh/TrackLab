@@ -22,6 +22,7 @@ import {
   type EventInput,
   type EventTypeKey,
 } from './schemas';
+import { describeError } from '@/lib/errors';
 
 /** Heading and save verb per event type. */
 const FORM_COPY: Record<EventTypeKey, { heading: string; save: string; icon: string }> = {
@@ -362,7 +363,7 @@ export function EventFormPage() {
 
           {record.isError ? (
             <p role="alert" className="m-0 text-[14px] text-urgent-ink">
-              {record.error instanceof Error ? record.error.message : 'This could not be saved.'}
+              {describeError(record.error, 'This could not be saved.')}
             </p>
           ) : null}
         </div>

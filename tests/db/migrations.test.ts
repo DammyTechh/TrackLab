@@ -551,3 +551,54 @@ describe('the public address for QR labels (0012)', () => {
     ).rejects.toThrow(/permission denied/);
   });
 });
+
+describe('labs the admin manages', () => {
+  let admin: string;
+  beforeAll(async () => {
+    admin = await userId(db, 'it.admin@test.local');
+  });
+  const asAdmin = <T,>(fn: () => Promise<T>) => as(db, 'authenticated', admin, fn);
+
+  it('lets the admin add a lab, which gets its own entrance-card code', async () => {
+    const result = await asAdmin(() =>
+      db.query(`insert into labs (name, code, building, room) values ('Geology Lab', 'GEO1', 'Block C', '3') returning public_token`),
+    );
+    expect((result.rows[0] as { public_token: string }).public_token).toMatch(/^[0-9a-f]{18}$/);
+  });
+
+  it.each([['lower case', 'geo2'], ['a space', 'GEO 2'], ['too long', 'GEOLOGYLAB2'], ['one letter', 'G']])(
+    'refuses a code with %s, which would not fit an asset ID',
+    async (_label, code) => {
+      await expect(asAdmin(() => db.query(`insert into labs (name, code) values ('X', $1)`, [code]))).rejects.toThrow(
+        /labs_code_shape/,
+      );
+    },
+  );
+
+  it('refuses a technician', async () => {
+    await expect(asTech(() => db.query(`insert into labs (name, code) values ('X', 'TECHX')`))).rejects.toThrow(
+      /row-level security/,
+    );
+  });
+
+  it('lets the admin rename, move and deactivate a lab', async () => {
+    const r = await asAdmin(() =>
+      db.query(`update labs set name = 'Geology Lab 1', room = '4', is_active = false where code = 'GEO1' returning name`),
+    );
+    expect(r.rows).toEqual([{ name: 'Geology Lab 1' }]);
+  });
+
+  it('allows changing the code of a lab with no machines yet', async () => {
+    const r = await asAdmin(() => db.query(`update labs set code = 'GEOL' where code = 'GEO1' returning code`));
+    expect(r.rows).toEqual([{ code: 'GEOL' }]);
+  });
+
+  it('refuses to change a code already in asset IDs, or any printed entrance-card code', async () => {
+    await expect(asAdmin(() => db.query(`update labs set code = 'CHEMX' where code = 'CHEM2'`))).rejects.toThrow(
+      /already part of its machines/,
+    );
+    await expect(
+      asAdmin(() => db.query(`update labs set public_token = 'abcdefabcdefabcdef' where code = 'GEOL'`)),
+    ).rejects.toThrow(/printed and cannot change/);
+  });
+});

@@ -252,9 +252,16 @@ export function LabelsPage() {
         <h2 className="mb-3 mt-10 text-[19px] font-semibold text-ink-strong">Preview</h2>
       </Container>
 
-      {/* What actually prints. Shown on screen too, as the preview. */}
+      {/* What actually prints. Shown on screen too, as the preview. Never
+          drawn while the address is local or still loading: a code on the
+          screen is as scannable as a printed one, and scanning one that pointed
+          at localhost is exactly how a phone ended up there. */}
       <div className="mx-auto w-full max-w-[210mm] px-4 pb-12 print:max-w-none print:p-0">
-        {tab === 'equipment' ? (
+        {address.loading || address.isPrivate ? (
+          <p className="m-0 rounded-lg border border-dashed border-line-strong p-8 text-center text-[14px] text-ink-muted print:hidden">
+            {address.loading ? 'Loading…' : 'The codes appear here once the public address is set.'}
+          </p>
+        ) : tab === 'equipment' ? (
           <div className={layout === 'sheet' ? 'grid grid-cols-1 gap-[4mm] sm:grid-cols-2 print:grid-cols-2' : 'flex flex-col'}>
             {toPrint.map((m) => (
               <EquipmentLabel key={m.id} machine={m} single={layout === 'single'} base={address.url} />

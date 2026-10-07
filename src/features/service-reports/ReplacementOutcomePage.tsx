@@ -7,6 +7,7 @@ import { Button } from '@/ui/Button';
 import { Field, controlClass } from '@/ui/Field';
 import { Icon } from '@/ui/Icon';
 import { Container, StickyActions } from '@/ui/Container';
+import { describeError } from '@/lib/errors';
 
 interface OpenReport {
   event_id: string;
@@ -105,7 +106,7 @@ export function ReplacementOutcomePage() {
       await queryClient.invalidateQueries();
       navigate(data ? `/e/${data.machine.qr_token}` : '/staff', { replace: true });
     },
-    onError: (err) => setError(err instanceof Error ? err.message : 'The outcome could not be saved.'),
+    onError: (err) => setError(describeError(err, 'The outcome could not be saved.')),
   });
 
   function onSubmit(event: FormEvent) {

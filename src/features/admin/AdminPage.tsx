@@ -2,19 +2,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Container } from '@/ui/Container';
 import { Button } from '@/ui/Button';
-import { Icon } from '@/ui/Icon';
 import { useAuth } from '@/app/AuthProvider';
 import { PublicAddressSettings } from './PublicAddressSettings';
+import { LabManager, type LabRow } from './LabManager';
+import { describeError } from '@/lib/errors';
 
-interface LabRow {
-  id: string;
-  name: string;
-  code: string;
-  building: string | null;
-  room: string | null;
-  public_token: string;
-  is_active: boolean;
-}
 
 interface PersonRow {
   id: string;
@@ -94,52 +86,7 @@ export function AdminPage() {
 
       <PublicAddressSettings />
 
-      <h2 className="mb-3 mt-8 text-[19px] font-semibold text-ink-strong">Labs</h2>
-      <ul className="m-0 flex list-none flex-col gap-3 p-0 md:hidden">
-        {(labs.data ?? []).map((lab) => (
-          <li key={lab.id} className="rounded-lg border border-line-subtle bg-surface-raised p-4">
-            <p className="m-0 flex items-baseline justify-between gap-3">
-              <span className="font-semibold text-ink-strong">{lab.name}</span>
-              <span className="mono text-[13px] text-ink-muted">{lab.code}</span>
-            </p>
-            <p className="mb-0 mt-1 text-[14px] text-ink-muted">
-              {[lab.building, lab.room].filter(Boolean).join(', ') || 'No location set'} · {counts.data?.get(lab.id) ?? 0}{' '}
-              machines
-            </p>
-            <a href={`/l/${lab.public_token}`} className="mt-2 inline-flex min-h-touch items-center gap-1 font-semibold text-brand">
-              Open entrance board <Icon name="open_in_new" size={18} />
-            </a>
-          </li>
-        ))}
-      </ul>
-      <div className="hidden overflow-x-auto rounded-lg border border-line-subtle bg-surface-raised md:block">
-        <table className="w-full min-w-[44rem] border-collapse text-left text-[14px]">
-          <thead>
-            <tr className="border-b border-line-subtle text-ink-muted">
-              <th className="px-4 py-3 font-semibold">Lab</th>
-              <th className="px-4 py-3 font-semibold">Code</th>
-              <th className="px-4 py-3 font-semibold">Where</th>
-              <th className="px-4 py-3 font-semibold">Machines</th>
-              <th className="px-4 py-3 font-semibold">Entrance board</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(labs.data ?? []).map((lab) => (
-              <tr key={lab.id} className="border-b border-line-subtle last:border-b-0">
-                <td className="px-4 py-3 font-semibold text-ink-strong">{lab.name}</td>
-                <td className="mono px-4 py-3">{lab.code}</td>
-                <td className="px-4 py-3 text-ink">{[lab.building, lab.room].filter(Boolean).join(', ') || '—'}</td>
-                <td className="px-4 py-3">{counts.data?.get(lab.id) ?? 0}</td>
-                <td className="px-4 py-3">
-                  <a href={`/l/${lab.public_token}`} className="inline-flex items-center gap-1 font-semibold text-brand">
-                    Open <Icon name="open_in_new" size={18} />
-                  </a>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <LabManager labs={labs.data ?? []} counts={counts.data ?? new Map()} />
 
       <h2 className="mb-3 mt-8 text-[19px] font-semibold text-ink-strong">Accounts</h2>
       <p className="mb-3 mt-0 text-[14px] text-ink-muted">
@@ -216,7 +163,7 @@ export function AdminPage() {
       </div>
       {toggle.isError ? (
         <p role="alert" className="mt-3 text-[14px] text-urgent-ink">
-          That change was not saved. {toggle.error instanceof Error ? toggle.error.message : ''}
+          That change was not saved. {describeError(toggle.error, '')}
         </p>
       ) : null}
     </Container>

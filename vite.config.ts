@@ -46,8 +46,9 @@ export default defineConfig(({ mode }) => {
         strategies: 'injectManifest',
         srcDir: 'src',
         filename: 'sw.ts',
-        injectRegister: 'auto',
-        registerType: 'prompt',
+        // Registered in src/main.tsx, which also reloads onto a new version.
+        injectRegister: false,
+        registerType: 'autoUpdate',
         manifest: {
           name: env.VITE_PRODUCT_NAME ?? 'EvidenceTag',
           short_name: env.VITE_PRODUCT_NAME ?? 'EvidenceTag',

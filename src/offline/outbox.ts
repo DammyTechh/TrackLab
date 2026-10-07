@@ -38,5 +38,5 @@ export async function markSent(id: string): Promise<void> {
 export async function markFailed(id: string, error: string): Promise<void> {
   const item = await db.outbox.get(id);
   if (!item) return;
-  await db.outbox.put({ ...item, attempts: item.attempts + 1, last_error: error });
+  await db.outbox.put({ ...item, attempts: item.attempts + 1, last_error: error, last_attempt_at: Date.now() });
 }

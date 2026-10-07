@@ -44,13 +44,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         return;
       }
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, role, is_active, must_change_password, lab_members(lab_id)')
         .eq('id', next.user.id)
         .single();
 
       if (cancelled) return;
+
+      // The server answered that this sign-in has no account (deleted, or the
+      // database was rebuilt). Clear it, so the person lands on a working
+      // sign-in page instead of being bounced around half signed in. A failed
+      // request, as when offline, leaves the session alone.
+      if (error && (error as { code?: string }).code === 'PGRST116') {
+        await supabase.auth.signOut({ scope: 'local' });
+        return;
+      }
 
       // The relational select returns a shape the generated types cannot
       // express; name it here rather than scattering casts at every use.

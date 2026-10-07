@@ -4,6 +4,7 @@ import { Icon } from '@/ui/Icon';
 import { equipmentPhotoUrl } from '@/lib/supabase';
 import { useNetwork } from '@/app/NetworkProvider';
 import { usePendingEquipmentPhoto, useSetEquipmentPhoto } from './photo';
+import { describeError } from '@/lib/errors';
 
 /**
  * The machine's photo, at the top of its passport. A visitor sees it and
@@ -41,14 +42,14 @@ export function EquipmentPhoto({
   } else if (setPhoto.isError) {
     statusLine = {
       icon: 'error',
-      text: setPhoto.error instanceof Error ? setPhoto.error.message : 'That photo could not be saved.',
+      text: describeError(setPhoto.error, 'That photo could not be saved.'),
       tone: 'urgent',
     };
   } else if (pending.isPending) {
     statusLine = pending.lastError
       ? {
           icon: 'sync_problem',
-          text: 'Saved on this phone. The upload has not gone through yet; it retries by itself.',
+          text: `Saved on this phone, but the upload failed: ${pending.lastError.replace(/\.?\s*$/, '.')} It retries by itself.`,
           tone: 'attention',
         }
       : state === 'offline'

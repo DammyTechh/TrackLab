@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabasePublic } from '@/lib/supabasePublic';
 import { db } from '@/offline/db';
 import type { EquipmentStatus } from '@/lib/status';
 
@@ -30,13 +30,23 @@ export interface PublicPassport {
  * scanning for the first time, who has nothing cached and will see the
  * offline state.
  */
-export async function fetchPassport(qrToken: string): Promise<PublicPassport> {
-  const { data, error } = await supabase.rpc('get_public_equipment', { p_qr_token: qrToken });
+/**
+ * The public passport for a scanned label, or null when the server answers
+ * that no machine has this code. Throws only when there is no answer at all
+ * and no copy on this device.
+ */
+export async function fetchPassport(qrToken: string): Promise<PublicPassport | null> {
+  const { data, error } = await supabasePublic.rpc('get_public_equipment', { p_qr_token: qrToken });
 
   if (!error && data) return { ...(data as PublicPassport), fromCache: false };
 
   const cached = await db.equipment.where('qr_token').equals(qrToken).first();
-  if (!cached) throw error ?? new Error('not-found');
+  if (!cached) {
+    // The server answered, and it has no machine with this code. Not a
+    // connection problem, and must not be reported as one.
+    if (!error) return null;
+    throw error;
+  }
 
   const events = await db.events.where('equipment_id').equals(cached.id).reverse().sortBy('occurred_at');
 

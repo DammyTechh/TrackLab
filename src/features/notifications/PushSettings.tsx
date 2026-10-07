@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/ui/Button';
 import { Icon } from '@/ui/Icon';
 import { pushState, turnOffPush, turnOnPush, type PushState } from './push';
+import { describeError } from '@/lib/errors';
 
 const COPY: Record<PushState['kind'], { icon: string; text: string }> = {
   on: { icon: 'notifications_active', text: 'This device gets a notification for each new alert.' },
@@ -45,7 +46,7 @@ export function PushSettings() {
     try {
       await action();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'That did not work. Try again.');
+      setError(describeError(err, 'That did not work. Try again.'));
     } finally {
       setState(await pushState());
       setBusy(false);

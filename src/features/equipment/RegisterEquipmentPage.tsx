@@ -60,6 +60,8 @@ export function RegisterEquipmentPage() {
         .from('labs')
         .select('id, name, code')
         .in('id', profile?.lab_ids ?? [])
+        // A switched-off lab takes no new machines.
+        .eq('is_active', true)
         .order('name');
       if (error) throw error;
       return data as Lab[];
@@ -202,7 +204,7 @@ export function RegisterEquipmentPage() {
     } catch (err) {
       setError(
         state === 'offline'
-          ? 'Registering needs a connection to the server. Try again on the campus network.'
+          ? 'Registering needs a connection to the server. Try again once this device is connected.'
           : err instanceof Error
             ? err.message
             : 'That machine could not be registered.',
@@ -232,7 +234,15 @@ export function RegisterEquipmentPage() {
 
         <div className="mt-6 rounded-xl border-4 border-accent bg-surface-raised p-6 text-center">
           {/* The QR svg is generated locally by the qrcode library from our own URL. */}
-          <div className="mx-auto w-[220px] max-w-full" dangerouslySetInnerHTML={{ __html: qrSvg }} />
+          {address.isPrivate ? (
+            // A code on screen is as scannable as a printed one: never show one
+            // that would open an address only this computer can reach.
+            <div className="mx-auto flex aspect-square w-[220px] max-w-full items-center justify-center rounded-lg border border-dashed border-line-strong p-4 text-[13px] text-ink-muted">
+              The code appears once the public address is set.
+            </div>
+          ) : (
+            <div className="mx-auto w-[220px] max-w-full" dangerouslySetInnerHTML={{ __html: qrSvg }} />
+          )}
           <p className="mono mb-0 mt-3 text-[19px] font-semibold tracking-[0.02em] text-ink-strong">{done.asset_id}</p>
           <p className="mb-0 mt-1 text-[15px] text-ink">{done.name}</p>
           <p className="mb-0 mt-1 text-[13px] text-ink-muted">{done.labName} · Scan for status and history</p>

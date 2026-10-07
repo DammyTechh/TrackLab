@@ -26,7 +26,7 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 /** Exponential backoff, capped: 1, 2, 4, 8, 16, 32 minutes. */
 const backoffMinutes = (attempts: number) => Math.min(2 ** attempts, 32);
 
-async function sendEmails(from: string, brand?: string) {
+async function sendEmails(from: string, brand?: string, publicBaseUrl?: string | null) {
   const { data: rows } = await supabase
     .from('email_outbox')
     .select('*')
@@ -39,7 +39,7 @@ async function sendEmails(from: string, brand?: string) {
 
   for (const row of rows ?? []) {
     try {
-      const { subject, html, attachments } = await renderEmail(supabase, row.template, row.payload, brand);
+      const { subject, html, attachments } = await renderEmail(supabase, row.template, row.payload, brand, publicBaseUrl);
 
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
@@ -138,10 +138,10 @@ Deno.serve(async (request) => {
   const forbidden = requireService(request);
   if (forbidden) return forbidden;
 
-  const { data: inst } = await supabase.from('institution').select('email_from, product_name, brand_primary').single();
+  const { data: inst } = await supabase.from('institution').select('email_from, product_name, brand_primary, public_base_url').single();
   const from = `${inst?.product_name ?? 'EvidenceTag'} <${inst?.email_from}>`;
 
-  const [emails, pushes] = await Promise.all([sendEmails(from, inst?.brand_primary ?? undefined), sendPush()]);
+  const [emails, pushes] = await Promise.all([sendEmails(from, inst?.brand_primary ?? undefined, inst?.public_base_url), sendPush()]);
 
   return new Response(JSON.stringify({ emails, pushes }), {
     headers: { 'Content-Type': 'application/json' },

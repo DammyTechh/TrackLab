@@ -43,9 +43,10 @@ only a programmer's machine while the development server is running, never the b
 that institutions use, and the fixes need major-version upgrades of those tools (§12).
 Do not run `npm audit fix --force`: it would downgrade the Excel export library and break
 the reports.
-Migrations 0001–0008 were applied against local Supabase (CLI 2.119) by the project owner;
-**0009 and 0010 have been executed in the test harness but not yet against Supabase** — run
-`npx supabase db reset` before relying on them.
+The database is two files: `0001_schema.sql` (the whole structure) and
+`0002_seed_institution_and_users.sql` (the institution, its labs and its accounts). Both are
+run against real PostgreSQL by the test suite on every check. To set up a project, follow
+**`docs/DATABASE-SETUP.md`**.
 
 > **Security — act before going live.** `seed-users` used to accept any caller holding the
 > public anon key, which ships in the website, so anyone could create an admin account. Fixed
@@ -100,7 +101,7 @@ Principles that the code depends on:
 
 1. **The server computes status.** `recompute_equipment_state()` sets `status`,
    `last_service_at` and `next_service_due` after every event. The client never does, and
-   since 0009 the database refuses it: an app request that writes status, service dates,
+   the database refuses it: an app request that writes status, service dates,
    `retired_at`, `asset_id` or `lab_id` is rejected (`equipment_guard_server_columns`).
 2. **History is append-only.** No update/delete on `events`; corrections are new rows.
    Service reports are locked after saving except for the replacement outcome (0008).
@@ -119,7 +120,8 @@ Principles that the code depends on:
 | `src/offline/` | `db.ts` (Dexie schema), `outbox.ts`, `sync.ts` (push outbox, then pull), `network.ts` |
 | `src/lib/` | Supabase client, institution branding, status labels, date helpers (Africa/Lagos) |
 | `src/styles/tokens.css` | The only place colours, spacing and radii are defined |
-| `supabase/migrations/` | `0001` schema · `0002` RLS · `0003` triggers · `0004` cron · `0005` institution + labs · `0006` accounts · `0007` storage buckets + policies · `0008` replacement outcome rules · `0009` server-column guard, interval recompute, document withdraw, Realtime, shared-phone push |
+| `supabase/migrations/` | `0001_schema.sql` the whole structure · `0002_seed_institution_and_users.sql` institution, labs, accounts |
+| `supabase/manual/` | `connect_functions.sql`: Vault secrets for the scheduled job, run once by hand |
 | `supabase/functions/` | `dispatch-outbox`, `seed-users`, `_shared/templates.ts` |
 | `deploy/env/` | `.env.tracklab.example` (the real file is gitignored) |
 
@@ -220,28 +222,17 @@ fails until you do).
 Do these in order. Tick each one.
 
 1. **Create the Supabase project** (a dedicated one, never shared), region closest to Nigeria.
-2. **Edit the seeds before the first push.**
-   - `supabase/migrations/0005_seed_institution.sql`: institution name and the lab list.
-     Lab `code`s appear in every asset ID; settle them before printing any label.
-   - `supabase/migrations/0006_seed_users.sql`: real names, emails, roles, labs, and
-     temporary passwords. **Do not commit real passwords**: run it, then restore the
-     placeholders.
-3. **Push the schema.**
-   ```bash
-   npx supabase login
-   npx supabase link --project-ref <project-ref>
-   npx supabase db push
-   ```
+2. **Edit the seed before running it.** `supabase/migrations/0002_seed_institution_and_users.sql`:
+   institution name and lab list (lab `code`s appear in every asset ID; settle them before
+   printing any label), then real names, emails, roles, labs and temporary passwords.
+   **Do not commit real passwords**: run it, then restore the placeholders.
+3. **Create the database:** run `0001_schema.sql`, then your edited `0002`, in the SQL
+   Editor, and record them for the CLI. Every step is in **`docs/DATABASE-SETUP.md`**.
 4. **Auth settings** (Dashboard → Authentication → Sign In / Providers): keep **Email
    enabled**, turn **off** "Allow new users to sign up", turn off email confirmation.
-5. **Vault secrets for the cron job** (SQL editor):
-   ```sql
-   select vault.create_secret('https://<project-ref>.supabase.co', 'app_base_url');
-   select vault.create_secret('<legacy service_role JWT>', 'service_role_key');
-   ```
-   `app_base_url` is the **Supabase project URL** (the function lives there), not the
-   website. Use the legacy `service_role` **JWT** (Settings → API keys → Legacy) because
-   the function is deployed with JWT verification; the new `sb_secret_` keys are not JWTs.
+5. **Vault secrets for the cron job:** fill in and run `supabase/manual/connect_functions.sql`
+   (the project URL, not the website, and the `service_role` key). See
+   `docs/DATABASE-SETUP.md` §3.
 6. **Email.** Verify the sending domain in Resend (SPF + DKIM).
 7. **Edge functions.**
    ```bash
@@ -300,6 +291,8 @@ Studio: http://127.0.0.1:55323. Local email inbox (Mailpit): http://127.0.0.1:55
 | `email_provider_disabled` on sign in | `[auth.email] enable_signup = false` turns off email login entirely | `[auth.email] enable_signup = true`; sign-ups stay blocked by `[auth] enable_signup = false` |
 | GitHub push blocked: "Supabase Secret Key" | `supabase/.temp/` was committed | `.gitignore` covers `supabase/.temp/`; history rebuilt without it |
 | Camera button opens a file picker on a phone | page served over plain http on a LAN IP | expected; the live camera needs https or localhost. Upload works everywhere |
+| A save fails with "the app's connection to it has not caught up" (or `PGRST204 … schema cache` in the browser) | SQL was run by hand and the API has not reloaded | SQL editor: `notify pgrst, 'reload schema';` |
+| A photo or document says the upload failed | the reason is shown beside it; the phone retries on its own every half minute or so, backing off to every ten minutes | fix the reason shown; it then goes through by itself |
 | Labels say they "can't be printed yet" | no public address saved, and the page is open on a local address | Admin → Public address |
 | A scanned label opens the wrong site | it was printed before the address was set | reprint it from the Labels page; the QR token stays the same |
 | Moving to a custom domain | | add the domain in Vercel, then Admin → Public address. Keep the old address working so labels already printed still scan |
@@ -339,16 +332,16 @@ Server secrets (never in the frontend): `RESEND_API_KEY`, `VAPID_PUBLIC_KEY`,
 
 | Task | How |
 | --- | --- |
-| Add a person | Add a row to `0006_seed_users.sql` and run the file in the SQL editor (idempotent; existing people untouched), or POST a private JSON file to `seed-users`. They must change the password at first sign-in. |
-| Reset a password | Snippet at the foot of `0006_seed_users.sql`. |
+| Add a person | Add a row to the accounts part of `0002_seed_institution_and_users.sql` and run the file in the SQL editor (idempotent; existing people untouched), or POST a private JSON file to `seed-users`. They must change the password at first sign-in. |
+| Reset a password | Snippet at the foot of `0002_seed_institution_and_users.sql`. |
 | Someone leaves | Admin → Accounts → **Deactivate**. Their history stays attributed to them. |
 | Wrong SOP uploaded | Passport → Documents → *Withdraw this document*, then add the right one. |
 | Someone wants fewer emails | They set it themselves: Alerts → *What reaches you* (every alert / critical only / off). In-app alerts always stay. |
 | Dean wants a weekly summary | Alerts → tick *Weekly summary by email*. Sent Monday 07:00, scoped to what they can see. |
 | A machine never alerts | It has no due date. Record its last service (or register it with one); see 4.3. |
 | Shared lab phone | Signing out turns push off for that device; the next person to sign in and turn it on takes the device over (`claim_push_subscription`). |
-| Move someone between labs | Snippet at the foot of `0006_seed_users.sql` (edits `lab_members`). |
-| Add a lab | Insert into `labs` (see `0005`); print its entrance card from Labels. |
+| Move someone between labs | Snippet at the foot of `0002_seed_institution_and_users.sql` (edits `lab_members`). |
+| Add a lab | Insert into `labs` (see the first part of `0002`); print its entrance card from Labels. |
 | Damaged label | Labels → untick "Only machines not printed yet" → select it → Print. Same code, same URL. |
 | Machine replaced | Register the new machine first, then record the outcome on the old one as *Replaced*. |
 | Wrong event entered | Record a new event that corrects it. Events cannot be edited by design. |
@@ -379,9 +372,8 @@ for any lab or all labs. View only.
 
 ## 12. Remaining work, in priority order
 
-1. **Go live** on Supabase Cloud using §7. First run `npx supabase db reset` locally so 0009
-   and 0010 are confirmed against real Supabase, and redeploy both edge functions (security
-   note in §1).
+1. **Go live** on Supabase Cloud using §7 and `docs/DATABASE-SETUP.md`, then redeploy both edge
+   functions.
 2. **First on-premise install** on a test machine, following `deploy/onprem/README.md`,
    including one restore drill. The kit is validated (Compose config, Caddy, ShellCheck,
    `setup.sh` run end to end) but has not been started on a real Docker host.
@@ -403,7 +395,7 @@ requires installing the app to the home screen; email and push need internet.
 
 - The institution's real name, short code and domain.
 - Final seed list (names, emails, labs) for deans, HODs, technicians and admins. The
-  current `0006` uses placeholders: two senior leaders, three HODs, four technicians, one admin.
+  current `0002` uses placeholders: two senior leaders, three HODs, four technicians, one admin.
 - Whether to fund the on-premise server now or after the pilot (§6).
 
 ---

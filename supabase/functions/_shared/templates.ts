@@ -62,8 +62,13 @@ export async function renderEmail(
   template: string,
   payload: Record<string, unknown>,
   brand?: string,
+  /** The public address the admin saved (institution.public_base_url). */
+  publicBaseUrl?: string | null,
 ): Promise<RenderedEmail> {
-  const base = Deno.env.get('APP_BASE_URL')!;
+  // Links open the address the admin saved, the same one the QR labels use,
+  // so moving to a custom domain moves the emails too. APP_BASE_URL is the
+  // fallback for before it is saved.
+  const base = (publicBaseUrl || Deno.env.get('APP_BASE_URL') || '').replace(/\/+$/, '');
   if (template === 'weekly_digest') return digestEmail(payload as DigestPayload, base, brand);
 
   const assetId = String(payload.asset_id ?? '');

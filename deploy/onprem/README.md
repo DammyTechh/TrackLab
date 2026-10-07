@@ -81,9 +81,9 @@ compose files and sets the project directory the same way every time.
 
 ## Accounts
 
-`migrate.sh` applies `0006_seed_users.sql` like every other migration, so
+`migrate.sh` applies `0002_seed_institution_and_users.sql` like the schema, so
 edit that file **before** the first run (see HANDOVER §6). Each migration
-runs only once, so editing 0006 later does nothing. To add people afterwards,
+runs only once, so editing it later does nothing. To add people afterwards,
 call the `seed-users` function with the service key; it refuses any other
 caller:
 

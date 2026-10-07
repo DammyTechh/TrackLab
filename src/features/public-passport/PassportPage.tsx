@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchPassport } from './api';
+import { CannotReach } from './CannotReach';
 import { StatusBadge } from '@/ui/StatusBadge';
 import { Button } from '@/ui/Button';
 import { Icon } from '@/ui/Icon';
@@ -26,7 +27,7 @@ export function PassportPage() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [sopError, setSopError] = useState<string>();
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['passport', qrToken],
     queryFn: () => fetchPassport(qrToken),
   });
@@ -40,20 +41,7 @@ export function PassportPage() {
 
   if (!isError && !data) return <UnknownCode kind="label" />;
 
-  if (isError || !data) {
-    return (
-      <Container className="py-16 text-center">
-        <Icon name="wifi_off" size={40} className="text-ink-muted" />
-        <h1 className="mt-4 text-[19px] font-semibold text-ink-strong">
-          This label can&rsquo;t be read right now
-        </h1>
-        <p className="mt-2 text-[13px] text-ink-muted">
-          The code is valid, but the server can&rsquo;t be reached. Try again once you are on the campus
-          network.
-        </p>
-      </Container>
-    );
-  }
+  if (isError || !data) return <CannotReach what="This label" error={error} onRetry={() => void refetch()} />;
 
   const overdueBy =
     data.next_service_due && data.status === 'overdue' ? -daysUntil(data.next_service_due) : null;
@@ -269,7 +257,7 @@ export function UnknownCode({ kind }: { kind: 'label' | 'lab' }) {
       </h1>
       <p className="mx-auto mt-2 max-w-[320px] text-[15px] leading-[23px] text-ink-muted">
         {kind === 'label'
-          ? 'Check that you scanned the whole code. If the label is damaged, find the asset ID printed on it in the lab entrance board.'
+          ? 'Check that you scanned the whole code. If the label is damaged, find the asset ID printed on it in the lab entrance board. A label made on a test copy of the app, such as one running on a laptop, is not found here.'
           : 'Check that you scanned the whole code on the lab door, or ask the lab technician.'}
       </p>
     </Container>

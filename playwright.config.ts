@@ -38,7 +38,9 @@ export default defineConfig({
     // Its own output folder, so a test run never replaces a production dist/.
     command: `npx vite build --mode e2e --outDir dist-e2e && npx vite preview --mode e2e --outDir dist-e2e --port ${PORT} --strictPort --host 127.0.0.1`,
     url: `http://127.0.0.1:${PORT}`,
-    reuseExistingServer: !process.env.CI,
+    // Always a fresh build: reusing a server left running from an earlier run
+    // tests old code, and once made a check pass that should have failed.
+    reuseExistingServer: false,
     timeout: 240_000,
     env: {
       VITE_INSTITUTION_CODE: 'E2E',

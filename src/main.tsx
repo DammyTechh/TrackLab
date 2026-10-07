@@ -4,6 +4,7 @@ import { RouterProvider } from 'react-router-dom';
 import { Providers } from './app/providers';
 import { router } from './app/router';
 import './styles/app.css';
+import { registerUpdates } from './app/updates';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -12,3 +13,5 @@ createRoot(document.getElementById('root')!).render(
     </Providers>
   </StrictMode>,
 );
+
+registerUpdates();

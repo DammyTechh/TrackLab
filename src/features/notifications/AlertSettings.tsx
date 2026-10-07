@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/app/AuthProvider';
 import { Button } from '@/ui/Button';
 import { Icon } from '@/ui/Icon';
+import { describeError } from '@/lib/errors';
 
 type Level = 'all' | 'critical' | 'none';
 
@@ -129,7 +130,7 @@ export function AlertSettings() {
       {save.isError ? (
         <p role="alert" className="mb-0 mt-3 flex items-start gap-2 text-[13px] text-urgent-ink">
           <Icon name="error" filled size={18} className="shrink-0" />
-          {save.error instanceof Error ? save.error.message : 'Those settings could not be saved.'}
+          {describeError(save.error, 'Those settings could not be saved.')}
         </p>
       ) : null}
 

@@ -55,6 +55,8 @@ export interface OutboxItem {
   created_at: number;
   attempts: number;
   last_error?: string;
+  /** When the last failed attempt was, so retries back off instead of hammering. */
+  last_attempt_at?: number;
 }
 
 class EvidenceTagDb extends Dexie {

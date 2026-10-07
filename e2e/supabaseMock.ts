@@ -79,7 +79,21 @@ function tableRows(table: string, filters: Record<string, string>): Record<strin
 /** publicBaseUrl: the address the admin saved (institution.public_base_url), or null for none. */
 export async function mockSupabase(
   context: BrowserContext,
-  { publicBaseUrl = null }: { publicBaseUrl?: string | null } = {},
+  {
+    publicBaseUrl = null,
+    failWrites = 0,
+    role = 'technician',
+    hasProfile = true,
+    mustChangePassword = false,
+  }: {
+    publicBaseUrl?: string | null;
+    failWrites?: number;
+    /** The signed-in person's role. */
+    role?: 'technician' | 'lab_hod' | 'senior_leader' | 'admin';
+    /** false: a sign-in with no account behind it, as one added in the dashboard alone. */
+    hasProfile?: boolean;
+    mustChangePassword?: boolean;
+  } = {},
 ): Promise<MockHandle> {
   const handle: MockHandle = { writes: [], signed: [] };
 
@@ -129,6 +143,10 @@ export async function mockSupabase(
     const rest = path.match(/^\/rest\/v1\/(.+)$/);
     if (!rest) return route.fulfill({ status: 404, body: '' });
     const target = rest[1]!;
+    // A request made with a broken stored sign-in is refused, as Supabase does.
+    if ((request.headers()['authorization'] ?? '') === 'Bearer broken-session-token') {
+      return json(route, { code: 'PGRST301', message: 'JWT expired' }, 401);
+    }
 
     if (target === 'rpc/get_public_equipment') {
       const { p_qr_token } = request.postDataJSON() as { p_qr_token: string };
@@ -140,12 +158,24 @@ export async function mockSupabase(
     if (method === 'HEAD') {
       return route.fulfill({ status: 200, headers: { 'content-range': '*/0' }, body: '' });
     }
+    if (method === 'GET' && target === 'profiles') {
+      const me = hasProfile ? [{ ...PROFILE, role, must_change_password: mustChangePassword }] : [];
+      const wantsObject = (request.headers()['accept'] ?? '').includes('vnd.pgrst.object');
+      if (wantsObject) return me[0] ? json(route, me[0]) : json(route, { code: 'PGRST116', message: 'no rows' }, 406);
+      return json(route, me);
+    }
     if (method === 'GET') {
       const rows =
       target === 'institution' ? [{ code: 'TEST', public_base_url: publicBaseUrl }] : tableRows(target, eqFilters(url));
       const wantsObject = (request.headers()['accept'] ?? '').includes('vnd.pgrst.object');
       if (wantsObject) return rows[0] ? json(route, rows[0]) : json(route, { code: 'PGRST116' }, 406);
       return json(route, rows, 200, { 'content-range': `0-${Math.max(rows.length - 1, 0)}/${rows.length}` });
+    }
+
+    // The first `failWrites` writes fail, as a server having a bad moment would.
+    if (failWrites > 0) {
+      failWrites -= 1;
+      return json(route, { code: '57014', message: 'canceling statement due to statement timeout' }, 500);
     }
 
     // Writes: record, acknowledge, return nothing (supabase-js default).

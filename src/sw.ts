@@ -3,11 +3,19 @@ import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
 import { CacheFirst, NetworkFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
+import { clientsClaim } from 'workbox-core';
 
 // vite-plugin-pwa injects the precache list here at build time.
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<{ url: string; revision: string | null }>;
 };
+
+// A new version replaces the old one as soon as it is installed. Without
+// this, every device kept running whichever version it first loaded, however
+// many times the site was redeployed: a waiting worker only takes over once
+// every tab of the app is closed, which on a phone is effectively never.
+void self.skipWaiting();
+clientsClaim();
 
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);

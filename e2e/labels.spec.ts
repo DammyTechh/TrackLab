@@ -47,4 +47,7 @@ test('with no saved address on a local machine, printing is blocked with a reaso
 
   await expect(page.getByRole('alert').filter({ hasText: 'can’t be printed yet' })).toBeVisible();
   await expect(page.getByRole('button', { name: /print/i }).first()).toBeDisabled();
+  // Not even on screen: a code on screen is as scannable as a printed one.
+  await expect(page.locator('svg:has(path)')).toHaveCount(0);
+  await expect(page.getByText('The codes appear here once the public address is set.')).toBeVisible();
 });

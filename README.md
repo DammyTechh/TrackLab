@@ -34,7 +34,7 @@ VITE_SUPABASE_URL=http://127.0.0.1:55321
 VITE_SUPABASE_ANON_KEY=sb_publishable_...      # "Publishable" key from supabase start
 ```
 
-Sign in with an account from `supabase/migrations/0006_seed_users.sql`.
+Sign in with an account from `supabase/migrations/0002_seed_institution_and_users.sql`.
 
 ## Scripts
 
@@ -72,10 +72,8 @@ src/
   styles/     tokens.css (the only place colours live), app.css
   sw.ts       service worker: precache, runtime caches, push handler
 supabase/
-  migrations/ 0001 schema · 0002 RLS · 0003 triggers · 0004 cron jobs
-              0005 institution + labs · 0006 accounts · 0007 storage · 0008 outcomes
-              0009 server-column guard, documents, realtime, shared-phone push
-              0010 per-person alert settings, leader alerts, weekly digest
+  migrations/ 0001 the whole structure · 0002 institution, labs and accounts
+  manual/     connect_functions.sql (run once; see docs/DATABASE-SETUP.md)
   functions/  dispatch-outbox, seed-users, shared email templates
 deploy/env/   the settings template (the real file is gitignored)
 docs/         HANDOVER.md

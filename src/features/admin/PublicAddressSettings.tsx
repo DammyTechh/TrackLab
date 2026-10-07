@@ -6,6 +6,7 @@ import { Button } from '@/ui/Button';
 import { Field } from '@/ui/Field';
 import { Icon } from '@/ui/Icon';
 import { normalisePublicAddress, usePublicAddress } from '@/features/equipment';
+import { describeError } from '@/lib/errors';
 
 /**
  * The one address every QR label opens. Saved in the database (0012), so it
@@ -68,7 +69,7 @@ export function PublicAddressSettings() {
             placeholder="https://app.tracklab.edu.ng"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            error={error ?? (save.isError ? (save.error instanceof Error ? save.error.message : 'Not saved.') : undefined)}
+            error={error ?? (save.isError ? (describeError(save.error, 'Not saved.')) : undefined)}
             help="https only, with nothing after the address."
           />
         </div>

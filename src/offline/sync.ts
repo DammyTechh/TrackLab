@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { db, getMeta, setMeta, type CachedEquipment } from './db';
 import { markFailed, markSent, pending } from './outbox';
 import { probe } from './network';
+import { rawErrorMessage } from '@/lib/errors';
 
 /**
  * Push first, then pull. Events are append-only and carry device-generated
@@ -20,13 +21,31 @@ export interface SyncResult {
   pulled: number;
 }
 
-export async function sync(): Promise<SyncResult> {
+/** 15 s after the first failure, doubling, never more than 10 minutes. */
+export function retryDelayMs(attempts: number): number {
+  return attempts <= 0 ? 0 : Math.min(15_000 * 2 ** (attempts - 1), 10 * 60_000);
+}
+
+export function isDueForRetry(item: { attempts: number; last_attempt_at?: number }, now = Date.now()): boolean {
+  return !item.last_attempt_at || now - item.last_attempt_at >= retryDelayMs(item.attempts);
+}
+
+let inFlight: Promise<SyncResult> | null = null;
+
+/** One sync at a time: callers arriving while one runs share its result. */
+export function sync(): Promise<SyncResult> {
+  if (!inFlight) inFlight = runSync().finally(() => (inFlight = null));
+  return inFlight;
+}
+
+async function runSync(): Promise<SyncResult> {
   const state = await probe();
   if (state === 'offline') return { pushed: 0, failed: 0, pulled: 0 };
 
   const result: SyncResult = { pushed: 0, failed: 0, pulled: 0 };
 
   for (const item of await pending()) {
+    if (!isDueForRetry(item)) continue;
     try {
       // Files go up first; a row that references a missing object is worse
       // than a file with no row, which the next sweep cleans up.
@@ -107,7 +126,7 @@ export async function sync(): Promise<SyncResult> {
       await markSent(item.id);
       result.pushed += 1;
     } catch (err) {
-      await markFailed(item.id, err instanceof Error ? err.message : String(err));
+      await markFailed(item.id, rawErrorMessage(err));
       result.failed += 1;
     }
   }

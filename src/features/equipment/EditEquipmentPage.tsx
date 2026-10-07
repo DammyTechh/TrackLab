@@ -10,6 +10,7 @@ import { useNetwork } from '@/app/NetworkProvider';
 import { useAuth } from '@/app/AuthProvider';
 import { db } from '@/offline/db';
 import { EDITABLE_FIELDS, FIELD_LABEL, mergeEdit, type Conflict, type EditableValues } from './editMerge';
+import { describeError } from '@/lib/errors';
 
 interface Loaded extends EditableValues {
   id: string;
@@ -93,7 +94,7 @@ export function EditEquipmentPage() {
         </h1>
         <p className="mx-auto mt-2 max-w-[22rem] text-[15px] leading-[23px] text-ink-muted">
           {machine.isError
-            ? 'Editing needs a connection to the server. Try again on the campus network.'
+            ? 'Editing needs a connection to the server. Try again once this device is connected.'
             : 'Only technicians and the HOD of the lab it belongs to can change its details.'}
         </p>
       </Container>
@@ -162,7 +163,7 @@ export function EditEquipmentPage() {
       ]);
       navigate(`/e/${loaded.qr_token}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Those changes could not be saved.');
+      setError(describeError(err, 'Those changes could not be saved.'));
     } finally {
       setBusy(false);
     }
